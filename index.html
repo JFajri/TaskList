@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light" data-accent="blue">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Taskly — Daftar Tugas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Instrument+Sans:wght@400..650&display=swap" rel="stylesheet">
+  <script>
+    /* Terapkan tema dan warna aksen sebelum render agar tidak berkedip */
+    try {
+      var t = localStorage.getItem("taskly_theme");
+      if (!t) t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.dataset.theme = t;
+      var a = localStorage.getItem("taskly_accent");
+      if (a) document.documentElement.dataset.accent = a;
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#taskList">Lewati ke daftar tugas</a>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          </span>
+          Taskly
+        </div>
+        <button type="button" class="icon-btn theme-mobile" data-action="theme" aria-label="Ganti tema terang atau gelap">
+          <svg class="i-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></svg>
+          <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+      </div>
+
+      <nav aria-label="Tampilan tugas">
+        <button type="button" class="nav-item is-active" data-filter="all">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>
+          <span>Semua tugas</span><b id="allCount">0</b>
+        </button>
+        <button type="button" class="nav-item" data-filter="today">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+          <span>Hari ini</span><b id="todayCount">0</b>
+        </button>
+        <button type="button" class="nav-item" data-filter="overdue">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+          <span>Terlambat</span><b id="overdueCount">0</b>
+        </button>
+        <button type="button" class="nav-item" data-filter="starred">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.8l2.5 5.2 5.7.8-4.1 4 1 5.6L12 16.7 6.9 19.4l1-5.6-4.1-4 5.7-.8L12 3.8z"/></svg>
+          <span>Berbintang</span><b id="starredCount">0</b>
+        </button>
+        <button type="button" class="nav-item" data-filter="completed">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.5 2.5 4.5-5"/></svg>
+          <span>Selesai</span><b id="completedCount">0</b>
+        </button>
+        <button type="button" class="nav-item" data-action="stats">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>
+          <span>Statistik</span>
+        </button>
+      </nav>
+
+      <div class="nav-group">
+        <p class="nav-heading">Kategori</p>
+        <nav id="catNav" aria-label="Kategori"></nav>
+      </div>
+
+      <div class="sidebar-foot">
+        <button type="button" class="ghost-btn" data-action="theme">
+          <svg class="i-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></svg>
+          <svg class="i-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <span class="theme-label">Mode gelap</span>
+        </button>
+        <button type="button" class="ghost-btn" data-action="settings">Pengaturan dan data</button>
+        <p class="note">Data tersimpan otomatis di browser ini.</p>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <p class="date" id="currentDate"></p>
+          <h1 id="pageTitle">Semua tugas</h1>
+        </div>
+      </header>
+
+      <section class="focus" aria-labelledby="focusTitle">
+        <div class="focus-main">
+          <p class="focus-label" id="focusLabel">Kerjakan ini dulu</p>
+          <h2 class="focus-title" id="focusTitle">Memuat…</h2>
+          <div class="focus-meta" id="focusMeta"></div>
+          <div class="focus-actions">
+            <button type="button" class="btn btn-light" id="focusDone">Tandai selesai</button>
+            <div class="timer" role="group" aria-label="Timer fokus">
+              <div class="timer-modes">
+                <button type="button" class="timer-mode is-active" data-mode="focus" aria-pressed="true">Fokus</button>
+                <button type="button" class="timer-mode" data-mode="break" aria-pressed="false">Istirahat</button>
+              </div>
+              <span class="timer-time" id="timerTime">25:00</span>
+              <button type="button" class="timer-btn primary" id="timerToggle">Mulai</button>
+              <button type="button" class="timer-btn" id="timerReset" aria-label="Reset timer">Reset</button>
+            </div>
+          </div>
+          <p class="focus-note">Kerjakan satu per satu, jangan semuanya sekaligus.</p>
+        </div>
+        <div class="focus-side">
+          <div class="ring" role="img" id="ringWrap" aria-label="Progress 0 persen">
+            <svg viewBox="0 0 120 120" width="136" height="136" aria-hidden="true">
+              <circle class="ring-track" cx="60" cy="60" r="52"/>
+              <circle class="ring-bar" id="ringBar" cx="60" cy="60" r="52"/>
+            </svg>
+            <span class="ring-number" id="progressNumber">0%</span>
+          </div>
+          <p class="ring-caption" id="progressCaption">0 dari 0 selesai</p>
+          <p class="ring-caption" id="sessionNote">0 sesi fokus hari ini</p>
+        </div>
+      </section>
+
+      <form class="composer" id="addForm" autocomplete="off">
+        <div class="composer-main">
+          <input id="taskInput" type="text" placeholder="Apa yang ingin kamu kerjakan?" maxlength="120" aria-label="Judul tugas">
+          <button type="submit" class="btn btn-primary" id="addBtn">Tambah tugas</button>
+        </div>
+        <div class="composer-opts">
+          <label class="opt"><span class="opt-label">Tenggat</span><input id="dateInput" type="date"></label>
+          <label class="opt"><span class="opt-label">Kategori</span><select id="catInput"></select></label>
+          <label class="opt"><span class="opt-label">Ulangi</span><select id="repeatInput"></select></label>
+          <fieldset class="seg">
+            <legend class="sr-only">Prioritas</legend>
+            <label><input type="radio" name="priority" value="low"><span>Rendah</span></label>
+            <label><input type="radio" name="priority" value="med" checked><span>Sedang</span></label>
+            <label><input type="radio" name="priority" value="high"><span>Tinggi</span></label>
+          </fieldset>
+        </div>
+        <p class="hint">Tulis cepat: <em>Rapat besok #kerja !tinggi</em> mengisi tenggat, kategori, dan prioritas sekaligus.</p>
+      </form>
+
+      <section class="toolbar" aria-label="Cari dan urutkan">
+        <div class="toolbar-row">
+          <label class="search">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg>
+            <input id="searchInput" type="search" placeholder="Cari judul atau catatan" aria-label="Cari tugas">
+            <kbd aria-hidden="true">/</kbd>
+          </label>
+          <label class="sort">
+            <span class="sr-only">Urutkan</span>
+            <select id="sortSelect">
+              <option value="newest">Terbaru</option>
+              <option value="oldest">Terlama</option>
+              <option value="date">Tenggat terdekat</option>
+              <option value="priority">Prioritas tertinggi</option>
+              <option value="alpha">Abjad</option>
+            </select>
+          </label>
+        </div>
+        <div class="filters" role="group" aria-label="Filter tugas">
+          <button type="button" class="filter is-active" data-filter="all">Semua</button>
+          <button type="button" class="filter" data-filter="today">Hari ini</button>
+          <button type="button" class="filter" data-filter="pending">Belum selesai</button>
+          <button type="button" class="filter" data-filter="overdue">Terlambat</button>
+          <button type="button" class="filter" data-filter="starred">Berbintang</button>
+          <button type="button" class="filter" data-filter="completed">Selesai</button>
+        </div>
+      </section>
+
+      <section id="taskList" class="task-list" aria-live="polite"></section>
+
+      <div id="emptyState" class="empty hidden">
+        <div class="empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </div>
+        <h3 id="emptyTitle">Belum ada tugas</h3>
+        <p id="emptyText">Tulis tugas pertamamu di atas.</p>
+      </div>
+
+      <footer class="page-foot">
+        <button type="button" class="ghost-btn" data-action="settings">Pengaturan dan data</button>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Detail tugas -->
+  <dialog id="taskDialog" class="dialog" aria-labelledby="dialogHeading">
+    <form id="taskForm" class="dialog-inner">
+      <header class="dialog-head">
+        <h2 id="dialogHeading">Detail tugas</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Tutup">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div class="dialog-body">
+        <label class="field"><span>Judul</span><input id="dTitle" type="text" required maxlength="120"></label>
+        <label class="field"><span>Catatan</span><textarea id="dNotes" rows="3" maxlength="2000" placeholder="Tambahkan catatan, tautan, atau detail"></textarea></label>
+        <div class="field-grid">
+          <label class="field"><span>Tenggat</span><input id="dDate" type="date"></label>
+          <label class="field"><span>Prioritas</span><select id="dPriority"></select></label>
+          <label class="field"><span>Kategori</span><select id="dCategory"></select></label>
+          <label class="field"><span>Ulangi</span><select id="dRepeat"></select></label>
+        </div>
+        <label class="check-row"><input type="checkbox" id="dStar"><span>Tandai berbintang</span></label>
+        <div class="field">
+          <span id="subLabel">Subtugas <em id="subCount"></em></span>
+          <ul id="subList" class="sub-list" aria-labelledby="subLabel"></ul>
+          <div class="sub-add">
+            <input id="subInput" type="text" maxlength="120" placeholder="Tambah subtugas lalu tekan Enter" aria-label="Subtugas baru">
+            <button type="button" class="btn btn-soft" id="subAdd">Tambah</button>
+          </div>
+        </div>
+      </div>
+      <footer class="dialog-foot">
+        <button type="button" class="btn btn-danger-soft" id="dDelete">Hapus tugas</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-soft" data-close>Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Statistik -->
+  <dialog id="statsDialog" class="dialog" aria-labelledby="statsHeading">
+    <div class="dialog-inner">
+      <header class="dialog-head">
+        <h2 id="statsHeading">Statistik</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Tutup">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div class="dialog-body" id="statsBody"></div>
+    </div>
+  </dialog>
+
+  <!-- Pengaturan dan data -->
+  <dialog id="settingsDialog" class="dialog" aria-labelledby="settingsHeading">
+    <div class="dialog-inner">
+      <header class="dialog-head">
+        <h2 id="settingsHeading">Pengaturan dan data</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Tutup">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div class="dialog-body">
+        <section class="set-block">
+          <h3>Tampilan</h3>
+          <div class="swatches" id="swatches" role="group" aria-label="Warna aksen">
+            <button type="button" class="swatch" data-accent="blue" aria-label="Biru" title="Biru"></button>
+            <button type="button" class="swatch" data-accent="emerald" aria-label="Hijau" title="Hijau"></button>
+            <button type="button" class="swatch" data-accent="rose" aria-label="Merah muda" title="Merah muda"></button>
+            <button type="button" class="swatch" data-accent="amber" aria-label="Oranye" title="Oranye"></button>
+            <button type="button" class="swatch" data-accent="violet" aria-label="Ungu" title="Ungu"></button>
+          </div>
+          <button type="button" class="btn btn-soft" data-action="theme"><span class="theme-label">Mode gelap</span></button>
+        </section>
+        <section class="set-block">
+          <h3>Cadangan</h3>
+          <p class="set-desc">Simpan semua tugas ke file, atau pulihkan dari file cadangan. Impor menggabungkan tugas baru tanpa menimpa yang sudah ada.</p>
+          <div class="btn-row">
+            <button type="button" class="btn btn-soft" data-action="export-json">Ekspor JSON</button>
+            <button type="button" class="btn btn-soft" data-action="import-json">Impor JSON</button>
+            <button type="button" class="btn btn-soft" data-action="export">Ekspor TXT</button>
+          </div>
+          <input type="file" id="importFile" accept="application/json,.json" hidden>
+        </section>
+        <section class="set-block">
+          <h3>Bersihkan</h3>
+          <div class="btn-row">
+            <button type="button" class="btn btn-soft" data-action="clear">Hapus tugas selesai</button>
+            <button type="button" class="btn btn-danger-soft" data-action="clear-all">Hapus semua tugas</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
